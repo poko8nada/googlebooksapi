@@ -11,13 +11,19 @@
 </head>
 <body>
   <header class="header">
-    <h1>GoogleBooksAPIを使って読書メモ</h1>
-    <form action="">
-      <input id="input" type="text" placeholder="本を検索する">
-    </form>
+    <div class="container">
+      <h1>GoogleBooksAPIを使って読書メモ</h1>
+      <form action="" id="search-box" method="POST">
+        <input id="input" type="text" name="search" placeholder="本を検索する">
+        <button type="submit">検索</button>
+      </form>
+    </div>
   </header>
   <main>
-    <ul id="list" class="list"></ul>
+    <div class="container">
+      <ul id="list" class="list"></ul>
+    </div>
+    <div class="scroll hide"><a href="javascript:void(0)">続きを表示</a></div>
   </main>
   <script src="js/main.js"></script>
 </body>
