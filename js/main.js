@@ -1,8 +1,11 @@
 window.addEventListener('load', () => {
 
-  const fetchBookData = async keyword => {
+  let startIndex = 0;
+  const fetchBookData = async (keyword, startIndex) => {
     const endPoint = 'https://www.googleapis.com/books/v1';
-    const response = await fetch(`${endPoint}/volumes?q=${keyword}`);
+    const response = await fetch(
+      `${endPoint}/volumes?q=${keyword}&maxResults=20&startIndex=${startIndex}`
+    );
     const data = await response.json();
     return data;
   };
@@ -11,7 +14,7 @@ window.addEventListener('load', () => {
     const books = await data.items.map(item => {
       let book = item.volumeInfo;
       return {
-        id: book.industryIdentifiers[0].identifier,
+        id: item.id,
         title: book.title,
         subtitle: book.subtitle ? book.subtitle : '',
         description: book.description ? book.description : 'unknown',
@@ -61,11 +64,11 @@ window.addEventListener('load', () => {
     };
   };
 
-  const getBooks = async keyword => {
-    const data = await fetchBookData(keyword);
+  const getBooks = async (keyword, startIndex) => {
+    const data = await fetchBookData(keyword, startIndex);
     const books = await buildBookObj(data);
 
-    dataBaseFunc(books);
+    // dataBaseFunc(books);
 
     return books;
   };
@@ -86,30 +89,60 @@ window.addEventListener('load', () => {
       </li>
       `;
     });
-    list.innerHTML = listItems.join('');
+    // list.innerHTML = listItems.join('');
+    list.insertAdjacentHTML('beforeend', listItems.join(''));
   };
 
-  const fadeIn = () => {
-    const items = document.querySelectorAll('.item');
-    for (let i = 0; i < items.length; i++) {
+  const fadeIn = async () => {
+    let i = 0;
+
+    const items = document.querySelectorAll('.fade-in');
+    for await (let item of items){
+      i++;
       setTimeout(() => {
-        items[i].classList.remove('fade-in');
-      }, 100 * (i - 1));
+        item.classList.remove('fade-in');
+      }, 20 * i);
+    }
+
+    const scroll = document.querySelector('.scroll');
+    setTimeout(()=>{
+      scroll.classList.remove('hide');
+    }, 20)
+  };
+
+  const clearDom = () =>{
+    const scroll = document.querySelector('.scroll');
+    scroll.classList.add('hide');
+
+    const list = document.getElementById('list');
+    while (list.firstChild) {
+      list.removeChild(list.firstChild);
     }
   };
 
   const showBooks = async () => {
     const input = document.querySelector('input[name="search"]');
-    const books = await getBooks(input.value);
+    const books = await getBooks(input.value, startIndex);
 
     createDom(books);
     fadeIn();
+    startIndex++;
+
   };
   // const showBooks = _.debounce(getBooks, 1000);
 
-  const searchBooks = document.getElementById('search-books');
-  searchBooks.addEventListener('submit', e => {
+  const searchBox = document.getElementById('search-box');
+  searchBox.addEventListener('submit', e => {
     e.preventDefault();
+
+    clearDom();
+
+    startIndex = 0;
+    showBooks();
+  });
+
+  const scrollBtn = document.querySelector('.scroll');
+  scrollBtn.addEventListener('click', () => {
     showBooks();
   });
 });
