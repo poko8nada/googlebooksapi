@@ -1,16 +1,40 @@
 window.addEventListener('load', () => {
   let startIndex = 0;
-  const fetchBookData = async (keyword, startIndex) => {
+  const maxResults = {
+    max: 40,
+    min: 10,
+  };
+
+  const fetchBookData = async (keyword, maxResults, startIndex) => {
     const endPoint = 'https://www.googleapis.com/books/v1';
     const response = await fetch(
-      `${endPoint}/volumes?q=${keyword}&maxResults=20&startIndex=${startIndex}`
+      `${endPoint}/volumes?q=${keyword}&maxResults=${maxResults}&startIndex=${startIndex}`
     );
     const data = await response.json();
+    console.log(startIndex);
     return data;
   };
 
   const buildBookObj = async data => {
-    const books = await data.items.map(item => {
+    let books = [];
+    if (startIndex !== 0) {
+      const listItems = document.querySelectorAll('.item');
+      const itemsId = [];
+      for (const item of listItems) {
+        itemsId.push(item.dataset.id);
+      }
+      for (const item of data.items) {
+        if (!itemsId.includes(item.id)) {
+          books.push(item);
+        }
+      }
+      console.log(books);
+    } else {
+      for (const item of data.items) {
+        books.push(item);
+      }
+    }
+    books = books.map(item => {
       let book = item.volumeInfo;
       return {
         id: item.id,
@@ -29,23 +53,33 @@ window.addEventListener('load', () => {
     return books;
   };
 
-  const dataBaseFunc = books => {
+  const openDB = async () => {
     const openRequest = indexedDB.open('booksData');
 
     openRequest.onupgradeneeded = e => {
       const db = e.target.result;
       db.createObjectStore('researchedBooks', { keyPath: 'id' });
     };
+    return openRequest;
+  };
 
-    openRequest.onsuccess = function (event) {
-      //DB作成or接続が成功した時
-      console.log('DBへの接続が成功しました');
+  const prepareStore = async event => {
+    let db = event.target.result;
+    let trans = db.transaction('researchedBooks', 'readwrite');
+    let store = trans.objectStore('researchedBooks');
+    return store;
+  };
 
-      let db = event.target.result;
-      let trans = db.transaction('researchedBooks', 'readwrite');
-      let store = trans.objectStore('researchedBooks');
+  const addBooksToDB = async (books, startIndex) => {
+    const openRequest = await openDB();
 
-      store.clear();
+    openRequest.onsuccess = async function (event) {
+      const store = await prepareStore(event);
+
+      if (startIndex > 3 || startIndex === 0) {
+        store.clear();
+        console.log('store clear');
+      }
 
       books.forEach(item => {
         let putRequest = store.put(item);
@@ -57,16 +91,17 @@ window.addEventListener('load', () => {
         };
       });
     };
+
     openRequest.onerror = function () {
       console.log('DBへの接続に失敗しました。');
     };
   };
 
-  const getBooks = async (keyword, startIndex) => {
-    const data = await fetchBookData(keyword, startIndex);
+  const getBooks = async (keyword, maxResults, startIndex) => {
+    const data = await fetchBookData(keyword, maxResults, startIndex);
     const books = await buildBookObj(data);
 
-    dataBaseFunc(books);
+    addBooksToDB(books, startIndex);
 
     return books;
   };
@@ -93,7 +128,6 @@ window.addEventListener('load', () => {
 
   const fadeIn = async () => {
     let i = 0;
-
     const items = document.querySelectorAll('.fade-in');
     for await (let item of items) {
       i++;
@@ -108,7 +142,7 @@ window.addEventListener('load', () => {
     }, 20);
   };
 
-  const switchScrollText = () =>{
+  const switchScrollText = () => {
     const scrollText = document.querySelectorAll('.scroll-text');
     scrollText.forEach(item => {
       item.classList.toggle('hide');
@@ -127,7 +161,6 @@ window.addEventListener('load', () => {
     }
   };
 
-   
   const switchSearchBox = () => {
     const search = document.querySelectorAll('.search');
     search.forEach(item => {
@@ -138,13 +171,11 @@ window.addEventListener('load', () => {
     h1.classList.add('hide');
   };
 
-  const showBooksDom = async value => {
-    const books = await getBooks(value, startIndex);
+  const showBooksDom = async (value, maxResults, startIndex) => {
+    const books = await getBooks(value, maxResults, startIndex);
 
     createDom(books);
     fadeIn();
-
-    startIndex++;
   };
   // const showBooks = _.debounce(getBooks, 1000);
 
@@ -152,36 +183,55 @@ window.addEventListener('load', () => {
   mainSearch.addEventListener('submit', e => {
     e.preventDefault();
 
+    const mainInput = document.querySelector('#main-search input');
+    if (mainInput.value === '' || mainInput.value.match(/\s+/g)) {
+      return false;
+    }
+
     switchSearchBox();
 
-    const mainInput = document.querySelector('#main-search input');
     startIndex = 0;
-    showBooksDom(mainInput.value);
+    showBooksDom(mainInput.value, maxResults.min, startIndex);
+    startIndex++;
 
     const headerInput = document.querySelector('#header-search input');
     headerInput.value = mainInput.value;
 
+    console.log(startIndex);
   });
 
   const headerSearch = document.querySelector('#header-search');
   headerSearch.addEventListener('submit', e => {
     e.preventDefault();
 
+    const headerInput = document.querySelector('#header-search input');
+    if (headerInput.value === '' || headerInput.value.match(/\s+/g)) {
+      return false;
+    }
+
     clearDom();
 
-    const headerInput = document.querySelector('#header-search input');
     startIndex = 0;
-    showBooksDom(headerInput.value);
+    showBooksDom(headerInput.value, maxResults.min, startIndex);
+    startIndex++;
+
+    console.log(startIndex);
   });
 
   const scrollBtn = document.querySelector('.scroll a');
   scrollBtn.addEventListener('click', async () => {
     const headerInput = document.querySelector('#header-search input');
-    await showBooksDom(headerInput.value);
+    await showBooksDom(headerInput.value, maxResults.max, startIndex);
+    startIndex++;
 
-    console.log(startIndex);
-    if (startIndex >= 5) {
+    if (startIndex >= 3) {
       switchScrollText();
     }
+    console.log(startIndex);
   });
+
+
+
+
+
 });

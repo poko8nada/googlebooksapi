@@ -171,6 +171,12 @@ main .search {
   color: #333;
 }
 
+.modal {
+  background: pink;
+  width: 100%;
+  height: 100px;
+}
+
 @media screen and (max-width: 640px) {
   .list {
     display: flex;
