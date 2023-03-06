@@ -1,5 +1,4 @@
 window.addEventListener('load', () => {
-
   let startIndex = 0;
   const fetchBookData = async (keyword, startIndex) => {
     const endPoint = 'https://www.googleapis.com/books/v1';
@@ -43,7 +42,6 @@ window.addEventListener('load', () => {
       console.log('DBへの接続が成功しました');
 
       let db = event.target.result;
-      //ここからオブジェクトストアに情報を{キー: 値・・・}の形で入れる処理。
       let trans = db.transaction('researchedBooks', 'readwrite');
       let store = trans.objectStore('researchedBooks');
 
@@ -68,7 +66,7 @@ window.addEventListener('load', () => {
     const data = await fetchBookData(keyword, startIndex);
     const books = await buildBookObj(data);
 
-    // dataBaseFunc(books);
+    dataBaseFunc(books);
 
     return books;
   };
@@ -97,7 +95,7 @@ window.addEventListener('load', () => {
     let i = 0;
 
     const items = document.querySelectorAll('.fade-in');
-    for await (let item of items){
+    for await (let item of items) {
       i++;
       setTimeout(() => {
         item.classList.remove('fade-in');
@@ -105,14 +103,23 @@ window.addEventListener('load', () => {
     }
 
     const scroll = document.querySelector('.scroll');
-    setTimeout(()=>{
+    setTimeout(() => {
       scroll.classList.remove('hide');
-    }, 20)
+    }, 20);
   };
 
-  const clearDom = () =>{
+  const switchScrollText = () =>{
+    const scrollText = document.querySelectorAll('.scroll-text');
+    scrollText.forEach(item => {
+      item.classList.toggle('hide');
+    });
+  };
+
+  const clearDom = () => {
     const scroll = document.querySelector('.scroll');
     scroll.classList.add('hide');
+
+    switchScrollText();
 
     const list = document.getElementById('list');
     while (list.firstChild) {
@@ -120,29 +127,61 @@ window.addEventListener('load', () => {
     }
   };
 
-  const showBooks = async () => {
-    const input = document.querySelector('input[name="search"]');
-    const books = await getBooks(input.value, startIndex);
+   
+  const switchSearchBox = () => {
+    const search = document.querySelectorAll('.search');
+    search.forEach(item => {
+      item.classList.toggle('hide');
+    });
+
+    const h1 = document.querySelector('h1');
+    h1.classList.add('hide');
+  };
+
+  const showBooksDom = async value => {
+    const books = await getBooks(value, startIndex);
 
     createDom(books);
     fadeIn();
-    startIndex++;
 
+    startIndex++;
   };
   // const showBooks = _.debounce(getBooks, 1000);
 
-  const searchBox = document.getElementById('search-box');
-  searchBox.addEventListener('submit', e => {
+  const mainSearch = document.querySelector('#main-search');
+  mainSearch.addEventListener('submit', e => {
+    e.preventDefault();
+
+    switchSearchBox();
+
+    const mainInput = document.querySelector('#main-search input');
+    startIndex = 0;
+    showBooksDom(mainInput.value);
+
+    const headerInput = document.querySelector('#header-search input');
+    headerInput.value = mainInput.value;
+
+  });
+
+  const headerSearch = document.querySelector('#header-search');
+  headerSearch.addEventListener('submit', e => {
     e.preventDefault();
 
     clearDom();
 
+    const headerInput = document.querySelector('#header-search input');
     startIndex = 0;
-    showBooks();
+    showBooksDom(headerInput.value);
   });
 
-  const scrollBtn = document.querySelector('.scroll');
-  scrollBtn.addEventListener('click', () => {
-    showBooks();
+  const scrollBtn = document.querySelector('.scroll a');
+  scrollBtn.addEventListener('click', async () => {
+    const headerInput = document.querySelector('#header-search input');
+    await showBooksDom(headerInput.value);
+
+    console.log(startIndex);
+    if (startIndex >= 5) {
+      switchScrollText();
+    }
   });
 });
