@@ -2,7 +2,7 @@ window.addEventListener('load', () => {
   let startIndex = 0;
   const maxResults = {
     max: 40,
-    min: 10,
+    min: 30,
   };
 
   const fetchBookData = async (keyword, maxResults, startIndex) => {
@@ -15,7 +15,7 @@ window.addEventListener('load', () => {
     return data;
   };
 
-  const buildBookObj = async data => {
+  const buildBookObj = async (data, startIndex) => {
     let books = [];
     if (startIndex !== 0) {
       const listItems = document.querySelectorAll('.item');
@@ -53,53 +53,71 @@ window.addEventListener('load', () => {
     return books;
   };
 
-  const openDB = async () => {
-    const openRequest = indexedDB.open('booksData');
+  const openDB = () => {
+    // Promiseで包んでハンドラの中で resolve ないし reject をしてあげるのがポイント。
+    const database = new Promise((resolve, reject) => {
+      const openRequest = indexedDB.open('booksData');
 
-    openRequest.onupgradeneeded = e => {
-      const db = e.target.result;
-      db.createObjectStore('researchedBooks', { keyPath: 'id' });
-    };
-    return openRequest;
-  };
+      openRequest.onsuccess = e => resolve(e.target.result);
+      openRequest.onerror = () => reject('fail to open');
 
-  const prepareStore = async event => {
-    let db = event.target.result;
-    let trans = db.transaction('researchedBooks', 'readwrite');
-    let store = trans.objectStore('researchedBooks');
-    return store;
+      openRequest.onupgradeneeded = e => {
+        const db = e.target.result;
+        db.createObjectStore('researchedBooks', { keyPath: 'id' });
+      };
+    });
+    return database;
   };
 
   const addBooksToDB = async (books, startIndex) => {
-    const openRequest = await openDB();
+    const database =  await openDB();
 
-    openRequest.onsuccess = async function (event) {
-      const store = await prepareStore(event);
-
+    // Promiseで包んでハンドラの中で resolve ないし reject をしてあげるのがポイント。
+    return new Promise((resolve, ) => {
+  
+      const trans = database.transaction('researchedBooks', 'readwrite');
+      const store = trans.objectStore('researchedBooks');
+      
       if (startIndex > 3 || startIndex === 0) {
         store.clear();
         console.log('store clear');
       }
-
+      
       books.forEach(item => {
-        let putRequest = store.put(item);
+        const putRequest = store.put(item);
         putRequest.onsuccess = function () {
-          console.log('正常にデータが追加されました。');
+          resolve(item);
         };
         putRequest.onerror = function () {
-          console.log('データの追加に失敗しました。');
+          reject;
         };
       });
-    };
-
-    openRequest.onerror = function () {
-      console.log('DBへの接続に失敗しました。');
-    };
+    });
   };
+
+  const getDataFromDB = async (id) => {
+    const database =  await openDB();
+
+    // Promiseで包んでハンドラの中で resolve ないし reject をしてあげるのがポイント。
+    return new Promise((resolve, reject) => {
+
+      const trans = database.transaction('researchedBooks', 'readonly');
+      const store = trans.objectStore('researchedBooks');
+
+      const getRequest = store.get(id);
+
+      getRequest.onsuccess = e => {
+        resolve(e.target.result);
+      };
+
+      getRequest.onerror = reject;
+  });
+  
+};
 
   const getBooks = async (keyword, maxResults, startIndex) => {
     const data = await fetchBookData(keyword, maxResults, startIndex);
-    const books = await buildBookObj(data);
+    const books = await buildBookObj(data, startIndex);
 
     addBooksToDB(books, startIndex);
 
@@ -142,18 +160,21 @@ window.addEventListener('load', () => {
     }, 20);
   };
 
-  const switchScrollText = () => {
-    const scrollText = document.querySelectorAll('.scroll-text');
-    scrollText.forEach(item => {
-      item.classList.toggle('hide');
-    });
+  const switchScrollText = startIndex => {
+    const scrollBtn = document.querySelector('.scroll-btn');
+    const scrollText = document.querySelector('.scroll-text');
+    if(startIndex < 2 ){
+      scrollBtn.classList.remove('hide');
+      scrollText.classList.add('hide');
+    }else{
+      scrollBtn.classList.add('hide');
+      scrollText.classList.remove('hide');
+    }
   };
 
   const clearDom = () => {
     const scroll = document.querySelector('.scroll');
     scroll.classList.add('hide');
-
-    switchScrollText();
 
     const list = document.getElementById('list');
     while (list.firstChild) {
@@ -179,13 +200,38 @@ window.addEventListener('load', () => {
   };
   // const showBooks = _.debounce(getBooks, 1000);
 
+  const createModal = (bookData) => {
+    const modalDom = `
+    <dl class="description">
+      <dt><img src="${bookData.imageLinks}"></dt>
+      <dd>
+      <h4>${bookData.title}</h4>
+      <p>${bookData.subtitle}</p>
+      <p class="author">著者: ${bookData.authors} / 出版社: ${bookData.publisher}</p>
+      <p>${bookData.description}</p>
+      <p><a href="${bookData.infoLink}" target="_blank">google booksへのリンク</a></p>
+      <p class="published-date">出版年月: ${bookData.publishedDate}</p>
+      </dd>
+    </dl>
+    `;
+    document.body.style.overflow = 'hidden';
+    const modal = document.querySelector('#modal');
+    modal.innerHTML = modalDom;
+
+    const top = window.pageYOffset;
+    const modalWrapper = document.querySelector('.modal-wrapper');
+    modalWrapper.style.top = top + 'px';
+
+    modalWrapper.classList.remove('hide');
+  };
+
   const mainSearch = document.querySelector('#main-search');
   mainSearch.addEventListener('submit', e => {
     e.preventDefault();
 
     const mainInput = document.querySelector('#main-search input');
-    if (mainInput.value === '' || mainInput.value.match(/\s+/g)) {
-      return false;
+    if (mainInput.value === '' || mainInput.value.match(/^\s+/g)) {
+      return;
     }
 
     switchSearchBox();
@@ -197,7 +243,6 @@ window.addEventListener('load', () => {
     const headerInput = document.querySelector('#header-search input');
     headerInput.value = mainInput.value;
 
-    console.log(startIndex);
   });
 
   const headerSearch = document.querySelector('#header-search');
@@ -205,13 +250,14 @@ window.addEventListener('load', () => {
     e.preventDefault();
 
     const headerInput = document.querySelector('#header-search input');
-    if (headerInput.value === '' || headerInput.value.match(/\s+/g)) {
-      return false;
+    if (headerInput.value === '' || headerInput.value.match(/^\s+/g)) {
+      return;
     }
 
     clearDom();
 
     startIndex = 0;
+    switchScrollText(startIndex);
     showBooksDom(headerInput.value, maxResults.min, startIndex);
     startIndex++;
 
@@ -224,14 +270,27 @@ window.addEventListener('load', () => {
     await showBooksDom(headerInput.value, maxResults.max, startIndex);
     startIndex++;
 
-    if (startIndex >= 3) {
-      switchScrollText();
+    switchScrollText(startIndex);
+  });
+
+  const list = document.getElementById('list');
+  list.addEventListener('click',  async e => {
+    if (e.target === e.currentTarget) {
+      return;
     }
-    console.log(startIndex);
+    const id =  await e.target.closest('.item').dataset.id;
+    const bookData = await getDataFromDB(id);
+    
+    createModal(bookData);
   });
 
 
+  const closeBtn = document.querySelector('.close-btn');
+  closeBtn.addEventListener('click', ()=> {
 
+    document.body.style.overflow = 'auto';
 
-
+    const modalWrapper = document.querySelector('.modal-wrapper');
+    modalWrapper.classList.add('hide');
+  });
 });
