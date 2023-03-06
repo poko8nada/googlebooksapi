@@ -1,32 +1,33 @@
-@charset "UTF-8";
+@charset "utf-8";
+
 /* restCSSのダークテーマを一旦lightに置き換え */
 *:where(html) {
   color-scheme: light;
 }
-
 :where(img, picture, svg) {
   max-inline-size: unset;
 }
+
 
 body {
   font-size: 1rem;
 }
 
-h1 {
+h1{
   font-size: 1.1em;
   font-weight: normal;
   color: white;
-  padding: 0.3em 0;
-  transition: all 0.1s ease-out;
+  padding: .3em 0;
+  transition: all .1s ease-out;
 }
 
 main {
   padding: 6em 1em;
 }
 
-.header {
+.header{
   background: #333;
-  padding: 0.8em 1.2em;
+  padding: .8em 1.2em;
   position: fixed;
   width: 100%;
   z-index: 999;
@@ -40,27 +41,29 @@ main {
   justify-content: space-between;
 }
 
-.search {
-  transition: transform 0.2s;
-}
-.search input {
-  border: 1px solid #aaa;
-  padding: 0.3em;
-  width: 15em;
-  border-radius: 4px;
-  margin-right: 0.3em;
-}
-.search button {
-  border-radius: 2px;
-  border: 1px solid #aaa;
-  padding: 0.3em 0.5em;
-}
-
-main .search {
-  margin: 20px auto;
+.search{
+  transition: transform .2s;
+  input{
+    border: 1px solid #aaa;
+    padding: .3em;
+    width: 15em;
+    border-radius: 4px;
+    margin-right: .3em;
+  }
+  button{
+    border-radius: 2px;
+    border: 1px solid #aaa;
+    padding: .3em .5em;
+  }
 }
 
-.hide {
+main {
+  .search{
+    margin: 20px auto;
+  }
+}
+
+.hide{
   margin: 0 !important;
   padding: 0 !important;
   height: 0 !important;
@@ -74,14 +77,13 @@ main .search {
   flex-wrap: wrap;
 }
 
-.fade-in {
+.fade-in{
   border: none !important;
   padding: 0 !important;
   height: 0;
   transform: translateY(30px);
-  opacity: 0.4;
+  opacity: .4;
 }
-
 .fade-in * {
   border: none !important;
   padding: 0 !important;
@@ -97,26 +99,25 @@ main .search {
   /* max-width: 400px; */
   width: 48%;
   margin-bottom: 4%;
-  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+  transition: transform .2s ease-out, opacity .2s ease-out;
   cursor: pointer;
 }
 
 .item:hover,
 .item:active {
-  opacity: 0.6;
+  opacity: .6;
   transform: scale(1.08);
 }
 
 .item .description {
   display: flex;
 }
-
 .description dt {
   margin-right: 0.8em;
 }
 
 .description dt img {
-  aspect-ratio: 4/5;
+  aspect-ratio: 4 / 5;
   width: 120px;
   border: 1px solid #eee;
 }
@@ -129,47 +130,50 @@ main .search {
 .description dd h3 {
   font-size: 1em;
   font-weight: normal;
-  margin-bottom: 0.5em;
+  margin-bottom: .5em;
 }
 
 .description dd p {
-  font-size: 0.75em;
+  font-size: .75em;
 }
 
-.description dd .published-date {
+.description dd .published-date{
   position: absolute;
   bottom: 0;
   right: 0;
 }
 
-.scroll {
+.scroll{
   max-width: 1000px;
   margin: 0 auto;
 }
 
-.scroll a {
-  color: #333;
-  padding: 0.5em;
-  border-radius: 5px;
-  background: #ccc;
-  display: block;
-  width: 100%;
-  text-align: center;
-  text-decoration: none;
-  transition: all 0.3s ease-in-out;
+.scroll{
+  a{
+    color: #333;
+    padding: .5em;
+    border-radius: 5px;
+    background: #ccc;
+    display: block;
+    width: 100%;
+    text-align: center;
+    text-decoration: none;
+    transition:  all .3s ease-in-out;
+    &:hover{
+      opacity: .8;
+      transform: scale(1.02);
+    }
+    &:active{
+      opacity: 1;
+      transform: scale(.9);
+    }
+  }
+  p{
+    text-align: center;
+    color: #333;
+  }
 }
-.scroll a:hover {
-  opacity: 0.8;
-  transform: scale(1.02);
-}
-.scroll a:active {
-  opacity: 1;
-  transform: scale(0.9);
-}
-.scroll p {
-  text-align: center;
-  color: #333;
-}
+
 
 @media screen and (max-width: 640px) {
   .list {
@@ -177,7 +181,7 @@ main .search {
     flex-direction: column;
     flex-wrap: wrap;
   }
-  .item {
+  .item{
     width: 100%;
   }
-}/*# sourceMappingURL=style.css.map */
+}

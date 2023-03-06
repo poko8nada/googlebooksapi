@@ -12,18 +12,31 @@
 <body>
   <header class="header">
     <div class="container">
-      <h1>GoogleBooksAPIを使って読書メモ</h1>
-      <form action="" id="search-box" method="POST">
-        <input id="input" type="text" name="search" placeholder="本を検索する">
-        <button type="submit">検索</button>
-      </form>
+      <div>
+        <h1>GoogleBooksAPIを使って読書メモ</h1>
+        <form action="" id="header-search" class="search hide" method="POST">
+          <input type="text" name="search" placeholder="本を検索する">
+          <button type="submit">検索</button>
+        </form>
+      </div>
     </div>
   </header>
   <main>
-    <div class="container">
+    <section>
+      <div class="container">
+        <form action="" id="main-search" class="search" method="POST">
+          <input type="text" name="search" placeholder="本を検索する">
+          <button type="submit">検索</button>
+        </form>
+      </div>
+    </section>
+    <section>
       <ul id="list" class="list"></ul>
-    </div>
-    <div class="scroll hide"><a href="javascript:void(0)">続きを表示</a></div>
+      <div class="scroll hide">
+        <a href="javascript:void(0)" class="scroll-text">続きを表示</a>
+        <p class="scroll-text hide">すべての結果が表示されました</p>
+      </div>
+    </section>
   </main>
   <script src="js/main.js"></script>
 </body>
